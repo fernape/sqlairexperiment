@@ -93,3 +93,69 @@ type Address struct {
 ```
 
 This way, the value of the resultset corresponding to the column `code` will be used to fill the field `Code` in a variable of type `Address`. Note that the fields must be exported (first letter should be capitalized).
+
+## Example walktrough
+Assuming the user has define the following types:
+```
+	type Address struct {
+		Dummy int `db:"foo"`
+		Code  int `db:"postal_code"`
+	}
+
+	type Person struct {
+		Name   string `db:"citizen_name"`
+		Age    int    `db:"citizen_age"`
+		Income int    `db:"citizen_income"`
+	}
+
+	var manager Person
+```
+That piece of code defines two types `Address` and `Person` and a variable
+`manager` of type `Person`. The fields in the structure have `db` tags
+indicating the corresponding column in the database.
+
+A user might be able to write a query like this:
+
+```
+	q := "select  citizen_income as &Person from citizens where citizen_name = $Person.citizen_name"
+```
+In the query above, we select rows from the `citizens` table and select only
+those which the column `citizen_name` matches the value of
+`$Person.citizen_name`. This parameter is yet to be specified. In addition we
+specify that the result of the query should be used to fill a certain &Person
+variable.
+
+In order to prepare the query, we need to pass the corresponding types:
+```
+Prepare(&Person{})
+```
+Note that we don't need to pass any specific values. The goal of the prepare
+stage is just to get and store reflection information on those types. Since we
+are using two instances of `Person`, it is just enough providing one `Person`
+object. The reflection information will be the same.
+
+Once the query is prepared, we complete it:
+```
+Complete(&Person{}, &Person{Name: "Fred"})
+```
+At this point we need to provide the actual data. No data is necessary for the
+first `Person` since it is an output expression. For the second expression we
+create a `Person` variable with the `Name` field set to `Fred`.
+
+Finally, we can execute the query. The query will use placeholders and will bind
+the necessary parameters so the backend database can take care of all the
+specific details (type conversion, quoting of strings, etc.)
+
+Once we have successfully executed the query, we can `Scan` the results into
+some variables:
+```
+Scan(&manager)
+```
+Since we have the reflection information, we know that the `citizen_name`
+corresponds to the `Name` field of the `Person` struct. We can then set the
+value of that field to the value extracted from the resultset.
+
+This is the basic journey of a SQLair query to the database and back and it is
+what happens if you run `go run main.go` in this project.
+
+
