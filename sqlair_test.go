@@ -83,7 +83,7 @@ func TestRound(t *testing.T) {
 				"inputPart[Address.ID]]",
 			[]any{&Person{}, &Address{}},
 			[]any{&Person{}, &Address{}},
-			"select address_id,id,name  from table where foo = ?",
+			"select address_id, id, name  from table where foo = ?",
 		},
 		{
 			"select &Person.* from table where foo = $Address.ID",
@@ -93,7 +93,7 @@ func TestRound(t *testing.T) {
 				"inputPart[Address.ID]]",
 			[]any{&Person{}, &Address{}},
 			[]any{&Person{}, &Address{}},
-			"select address_id,id,name  from table where foo = ?",
+			"select address_id, id, name  from table where foo = ?",
 		},
 		{
 			"select foo, bar, &Person.ID from table where foo = 'xx'",
@@ -136,7 +136,7 @@ func TestRound(t *testing.T) {
 				"stringPart[ 'Fred']]",
 			[]any{&Person{}},
 			[]any{&Person{}},
-			"SELECT address_id,id,name  FROM person WHERE name =  'Fred'",
+			"SELECT address_id, id, name  FROM person WHERE name =  'Fred'",
 		},
 		{
 			"SELECT * AS &Person.*, a.* as &Address.* FROM person, address a WHERE name = 'Fred'",
@@ -157,7 +157,7 @@ func TestRound(t *testing.T) {
 				"stringPart[ FROM address AS a WHERE p.name =] stringPart[ 'Fred']]",
 			[]any{&Address{}},
 			[]any{&Address{}},
-			"SELECT a.district,a.street  FROM address AS a WHERE p.name =  'Fred'",
+			"SELECT a.district, a.street  FROM address AS a WHERE p.name =  'Fred'",
 		},
 		{
 			"SELECT 1 FROM person WHERE p.name = 'Fred'",
@@ -179,7 +179,7 @@ func TestRound(t *testing.T) {
 				"stringPart[ 'Fred']]",
 			[]any{&Person{}, &Address{}},
 			[]any{&Person{}, &Address{}},
-			"SELECT p.* , a.district,a.street , (5+7), (col1 * col2) as calculated_value FROM person AS p JOIN address AS a ON p.address_id = a.id WHERE p.name =  'Fred'",
+			"SELECT p.* , a.district, a.street , (5+7), (col1 * col2) as calculated_value FROM person AS p JOIN address AS a ON p.address_id = a.id WHERE p.name =  'Fred'",
 		},
 		{
 			"SELECT p.* AS &Person.*, (a.district, a.street) AS &Address.* " +
@@ -193,7 +193,7 @@ func TestRound(t *testing.T) {
 				"stringPart[ 'Fred']]",
 			[]any{&Person{}, &Address{}},
 			[]any{&Person{}, &Address{}},
-			"SELECT p.* , a.district,a.street  FROM person AS p JOIN address AS a ON p .address_id = a.id WHERE p.name =  'Fred'",
+			"SELECT p.* , a.district, a.street  FROM person AS p JOIN address AS a ON p .address_id = a.id WHERE p.name =  'Fred'",
 		},
 		{
 			"SELECT p.* AS &Person.*, (a.district, a.street) AS &Address.* " +
@@ -208,7 +208,7 @@ func TestRound(t *testing.T) {
 				"stringPart[)]]",
 			[]any{&Person{}, &Address{}},
 			[]any{&Person{}, &Address{}, &Person{}},
-			"SELECT p.* , a.district,a.street  FROM person AS p JOIN address AS a ON p.address_id = a.id WHERE p.name in (select name from table where table.n = ? )",
+			"SELECT p.* , a.district, a.street  FROM person AS p JOIN address AS a ON p.address_id = a.id WHERE p.name in (select name from table where table.n = ? )",
 		},
 		{
 			"SELECT p.* AS &Person.*, (a.district, a.street) AS &Address.* " +
@@ -230,7 +230,7 @@ func TestRound(t *testing.T) {
 				"stringPart[)]]",
 			[]any{&Person{}, &Address{}},
 			[]any{&Person{}, &Address{}, &Person{}, &Person{}, &Address{}, &Person{}},
-			"SELECT p.* , a.district,a.street  FROM person WHERE p.name in (select name from table where table.n = ? ) UNION SELECT p.* , a.district,a.street  FROM person WHERE p.name in (select name from table where table.n = ? )",
+			"SELECT p.* , a.district, a.street  FROM person WHERE p.name in (select name from table where table.n = ? ) UNION SELECT p.* , a.district, a.street  FROM person WHERE p.name in (select name from table where table.n = ? )",
 		},
 		{
 			"SELECT p.* AS &Person.*, m.* AS &Manager.* " +
@@ -446,14 +446,14 @@ func TestUnfinishedStringLiteral(t *testing.T) {
 	sql := "select foo from t where x = 'dddd"
 	parser := NewParser()
 	_, err := parser.Parse(sql)
-	assert.Equal(t, fmt.Errorf("Missing right quote in string literal"), err)
+	assert.Equal(t, fmt.Errorf("missing right quote in string literal"), err)
 }
 
 func TestUnfinishedStringLiteralV2(t *testing.T) {
 	sql := "select foo from t where x = \"dddd"
 	parser := NewParser()
 	_, err := parser.Parse(sql)
-	assert.Equal(t, fmt.Errorf("Missing right quote in string literal"), err)
+	assert.Equal(t, fmt.Errorf("missing right quote in string literal"), err)
 }
 
 // We require to end the string literal with the proper quote depending
@@ -462,7 +462,7 @@ func TestUnfinishedStringLiteralV3(t *testing.T) {
 	sql := "select foo from t where x = \"dddd'"
 	parser := NewParser()
 	_, err := parser.Parse(sql)
-	assert.Equal(t, fmt.Errorf("Missing right quote in string literal"), err)
+	assert.Equal(t, fmt.Errorf("missing right quote in string literal"), err)
 }
 
 // Detect bad input DSL pieces
@@ -470,7 +470,7 @@ func TestBadFormatInput(t *testing.T) {
 	sql := "select foo from t where x = $.id"
 	parser := NewParser()
 	_, err := parser.Parse(sql)
-	assert.Equal(t, fmt.Errorf("No qualifier in input expression"), err)
+	assert.Equal(t, fmt.Errorf("no qualifier in input expression"), err)
 }
 
 // Detect bad input DSL pieces
@@ -478,7 +478,7 @@ func TestBadFormatInputV2(t *testing.T) {
 	sql := "select foo from t where x = $Address."
 	parser := NewParser()
 	_, err := parser.Parse(sql)
-	assert.Equal(t, fmt.Errorf("Expecting identifier after 'Address.'"), err)
+	assert.Equal(t, fmt.Errorf("expecting identifier after 'Address.'"), err)
 }
 
 // Detect bad output DSL pieces
@@ -486,7 +486,7 @@ func TestBadFormatOutput(t *testing.T) {
 	sql := "select foo as && from t"
 	parser := NewParser()
 	_, err := parser.Parse(sql)
-	assert.Equal(t, fmt.Errorf("Malformed output expression"), err)
+	assert.Equal(t, fmt.Errorf("malformed output expression"), err)
 }
 
 // Detect bad output DSL pieces
@@ -494,7 +494,7 @@ func TestBadFormatOutputV2(t *testing.T) {
 	sql := "select foo as &.bar from t"
 	parser := NewParser()
 	_, err := parser.Parse(sql)
-	assert.Equal(t, fmt.Errorf("Malformed output expression"), err)
+	assert.Equal(t, fmt.Errorf("malformed output expression"), err)
 }
 
 // We return a proper error when the number of parameters do not match
@@ -506,5 +506,5 @@ func TestNumParemeterMismatch(t *testing.T) {
 	assert.Equal(t, nil, err)
 	prepared, err := parsed.Prepare(&Address{}, &Person{})
 	_, err = prepared.Complete(&Address{})
-	assert.Equal(t, fmt.Errorf("Parameters mismatch. Expected 2, have 1"), err)
+	assert.Equal(t, fmt.Errorf("parameters mismatch. expected 2, have 1"), err)
 }

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"sort"
 	sqlairreflect "sqlairtest/reflect"
 	"strings"
 
@@ -42,8 +43,6 @@ func (p *Parser) advance() bool {
 	return p.skipped != mark
 }
 
-// AF: skipped is current pos - is that a good name?
-// AF: Would the file ordering be better if the helper functions came first?
 func (p *Parser) parseStringLiteral() error {
 	cp := p.save()
 	p.skipSpaces()
@@ -55,7 +54,7 @@ func (p *Parser) parseStringLiteral() error {
 				// Reached end of string
 				// and didn't find the closing quote
 				p.add(cp, &stringPart{p.str[p.parsed:]})
-				return fmt.Errorf("Missing right quote in string literal")
+				return fmt.Errorf("missing right quote in string literal")
 			}
 			p.add(cp, &stringPart{p.str[cp.skipped:p.skipped]})
 			return nil
@@ -111,7 +110,7 @@ func (p *Parser) parseInputExpression() error {
 	if p.skipByte('$') {
 		if qe, err := p.parseQualifiedExpression(); err == nil {
 			if qe.Left == "" {
-				return fmt.Errorf("No qualifier in input expression")
+				return fmt.Errorf("no qualifier in input expression")
 			}
 			p.add(cp, &inputPart{typeField{qe.Left, qe.Right}})
 		} else {
@@ -120,6 +119,21 @@ func (p *Parser) parseInputExpression() error {
 	}
 	return nil
 }
+
+// Other names could be outputClause, queryOutputClause
+type parsedOutputPart struct {
+	// This is whatever follows the & it could be a Struct, an M a variable or even blank
+	// For now we've only implemented structs,
+	GoObjName string
+	// This is a list of strings because we only care about the column names so far as we
+	// use them to access tags in structs or set keys in maps, we don't want to overanalyse
+	// them (a query such as SELECT Count(*)... could cause issues if we were more specific)
+	Columns []string
+}
+
+//func (p *Parser) parseColumn(string, bool) {
+//
+//}
 
 func (p *Parser) parseOutputExpression() error {
 	cp := p.save()
@@ -133,7 +147,7 @@ func (p *Parser) parseOutputExpression() error {
 	if p.skipByte('&') {
 		if qe, err := p.parseQualifiedExpression(); err == nil {
 			if qe.Left == "" {
-				return fmt.Errorf("Malformed output expression")
+				return fmt.Errorf("malformed output expression")
 			}
 			p.add(cp, &outputPart{[]tableColumn{},
 				[]typeField{{qe.Left, qe.Right}}})
@@ -161,7 +175,7 @@ func (p *Parser) parseOutputExpression() error {
 			if p.skipByte('&') {
 				if qe, err := p.parseQualifiedExpression(); err == nil {
 					if qe.Left == "" {
-						return fmt.Errorf("Malformed output expression")
+						return fmt.Errorf("malformed output expression")
 					}
 					p.add(cp, &outputPart{[]tableColumn{{dc.Left, dc.Right}},
 						[]typeField{{qe.Left, qe.Right}}})
@@ -368,6 +382,11 @@ func generateOutputInfo(op *outputPart, targetInfo sqlairreflect.Info) OutputInf
 
 	outputCols := make([]string, 0)
 
+	// This assumes that the user has written SELECT &Person.* FROM, we need to take account of SELECT &Person.name FROM
+	if len(op.Columns) == 0 {
+		outputCols = append(outputCols, tagNameList...)
+	}
+
 	for _, column := range op.Columns {
 		colName := column.Column
 		if colName == "*" {
@@ -519,7 +538,7 @@ func (pe *PreparedExpr) Complete(arguments ...any) (*CompletedExpr, error) {
 		}
 	}
 	if ioparts != len(arguments) {
-		return nil, fmt.Errorf("Parameters mismatch. Expected %d, have %d", ioparts, len(arguments))
+		return nil, fmt.Errorf("parameters mismatch. expected %d, have %d", ioparts, len(arguments))
 	}
 	return &ce, nil
 }
@@ -589,8 +608,6 @@ func (ce *CompletedExpr) Exec(db *sql.DB, parts []Part, argTypes typeMap) error 
 // AF: outputs are the vars to put the outputs INTO
 func (ce *CompletedExpr) Scan(parts []Part, argTypes typeMap, outputs ...any) error {
 
-	outputPartIndex := 0
-
 	columns, _ := ce.rows.Columns()
 	values := make([]interface{}, len(columns))
 	valuePtrs := make([]interface{}, len(columns))
@@ -604,9 +621,9 @@ func (ce *CompletedExpr) Scan(parts []Part, argTypes typeMap, outputs ...any) er
 	ce.rows.Scan(valuePtrs...)
 	ce.rows.Close()
 
-	for _, oi := range ce.outputSpecs {
+	for i, oi := range ce.outputSpecs {
 		outputStruct := argTypes[oi.OutputTypeName].(sqlairreflect.Struct)
-		s := reflect.ValueOf(outputs[outputPartIndex]).Elem()
+		s := reflect.ValueOf(outputs[i]).Elem()
 
 		for _, colName := range oi.OutputColumns {
 			field, found := outputStruct.Fields[colName]
@@ -627,97 +644,10 @@ func (ce *CompletedExpr) Scan(parts []Part, argTypes typeMap, outputs ...any) er
 				return fmt.Errorf("the column %s is type %s but the struct %s has type %s", colName, valType, field.Name, outputField.Type())
 			}
 		}
-		outputPartIndex++
 	}
 
 	return nil
 }
-
-//// AF: outputs are the vars to put the outputs INTO
-//func (ce *CompletedExpr) Scan(parts []Part, argTypes typeMap, outputs ...any) error {
-//	c := sqlairreflect.Cache()
-//	var outputPartIndex int
-//	for _, part := range parts {
-//		switch part.(type) {
-//		case *outputPart:
-//			op := part.(*outputPart) //AF: We need this because 'part' is currently only
-//			//really something implementing the interface
-//			optypename := op.Fields[0].Type                       // optypename is the name of the Struct to output into (i.e. Person)
-//			reflected, err := c.Reflect(outputs[outputPartIndex]) // Get the info about the output types and put in reflected
-//			if err != nil {
-//				return err
-//			}
-//			// This checks if the output type given back in Prepare is the same as
-//			// the type of the var that has been passed to Scan
-//			if reflected.Name() == optypename { // reflected.Name() is the name of the type we want to output into
-//				// infstruct is and Info Struct
-//				infstruct := argTypes[optypename] // argTypes should be the type of the input expressions
-//				// Confiusingly there is a struct called Struct. And even though infsruct is only know to be of type Info
-//				// here, WE know that it is in fact a Struct which has a Fields field. How confusing.
-//				struc := infstruct.(sqlairreflect.Struct)
-//
-//				s := reflect.ValueOf(outputs[outputPartIndex]).Elem()
-//				columns, _ := ce.rows.Columns()
-//				values := make([]interface{}, len(columns))
-//				valuePtrs := make([]interface{}, len(columns))
-//				colToIndex := map[string]int{}
-//				for i, colName := range columns {
-//					valuePtrs[i] = &values[i]
-//					colToIndex[colName] = i
-//				}
-//
-//				ce.rows.Next() // We should really have a Next method for the whole CompleteExpression interface
-//				ce.rows.Scan(valuePtrs...)
-//				ce.rows.Close()
-//
-//				for _, oi := range ce.outputSpecs {
-//					outputStruct := argTypes[oi.OutputTypeName].(sqlairreflect.Struct)
-//
-//					for _, colName := range oi.OutputColumns {
-//						field, found := outputStruct.Fields[colName]
-//
-//						if !found {
-//							return fmt.Errorf("can not found column '%s' of output type %s in results", colName, oi.OutputTypeName)
-//						}
-//						val := values[colToIndex[colName]]
-//						findex := field.Index
-//						outputField := s.Field(findex)
-//						valType := reflect.TypeOf(val)
-//						if !outputField.CanSet() {
-//							return fmt.Errorf("the field %s of %s is not exported", field.Name, struc.Name())
-//						}
-//						if valType == outputField.Type() {
-//							outputField.Set(reflect.ValueOf(val))
-//						} else {
-//							return fmt.Errorf("the column %s is type %s but the struct %s has type %s", colName, valType, field.Name, outputField.Type())
-//						}
-//					}
-//				}
-//
-//				for i, colName := range columns {
-//					val := values[i]
-//					field, found := struc.Fields[colName]
-//					if !found {
-//						return fmt.Errorf("can not found tag for '%s' in output variable", colName)
-//					}
-//					findex := field.Index
-//					outputField := s.Field(findex)
-//					valType := reflect.TypeOf(val)
-//					if !outputField.CanSet() {
-//						return fmt.Errorf("the field %s of %s is not exported", field.Name, struc.Name())
-//					}
-//					if valType == outputField.Type() {
-//						outputField.Set(reflect.ValueOf(val))
-//					} else {
-//						return fmt.Errorf("the column %s is type %s but the struct %s has type %s", colName, valType, field.Name, outputField.Type())
-//					}
-//				}
-//			}
-//			outputPartIndex++
-//		}
-//	}
-//	return nil
-//}
 
 // typesForStatement returns reflection information for the input arguments.
 // The reflected type name of each argument must be unique in the list,
@@ -876,12 +806,13 @@ func (op *outputPart) ToSql(pe *PreparedExpr) (string, error) {
 		// foo as &Type.Field --> print foo
 		for i, c := range op.Columns {
 			if i > 0 {
-				out = out + ","
-			} else if c.Table != "" {
-				out = out + c.Table + "." + c.Column
-			} else {
-				out = out + c.Column
+				out = out + ", "
 			}
+			if c.Table != "" {
+				out = out + c.Table + "."
+			}
+			out = out + c.Column
+
 		}
 		return out, nil
 	}
@@ -895,6 +826,19 @@ func (op *outputPart) ToSql(pe *PreparedExpr) (string, error) {
 			return "", fmt.Errorf("%s not found", dbName) // Look for the tag
 		}
 	}
+
+	tagList := make([]string, 0)
+	for _, tag := range sf.Tags {
+		tagList = append(tagList, tag)
+	}
+	// We need this because the order is random every time and the tests depend on it
+	sort.Strings(tagList)
+	for _, tag := range tagList {
+
+		out = out + tag + ", "
+	}
+	out = out[:len(out)-2]
+
 	// if the column is '*' or there is no column (as in &Person) expand to
 	// all the columns with a `db` tag. Ignore the rest.
 	// The iteration order of the hash is not specified. We need
@@ -1001,15 +945,16 @@ func main() {
 
 	var manager Person
 	var otherguy Person
-	//q := "select p.* as &Person.* from citizens AS p"
+	q := "select p.* as &Person.* from citizens AS p"
+	//q := "SELECT (a.district, a.street) AS &Address.* FROM address AS a WHERE p.name = 'Fred'"
 	//q := "select * as &Person.* from citizens"
-	q := "select * as &Person.*, citizen_name as &Person.* from citizens"
+	//q := "select * as &Person.*, citizen_name as &Person.* from citizens"
 	//q := "select citizen_income AS &Person from citizens where citizen_income = $Person.citizen_income"
 	// q := "select citizen_income, citizen_name AS &Person from citizens where citizen_income = $Person.citizen_income"
 	fmt.Printf("Input query: %s\n", q)
 	if parsedexp, err := p.Parse(q); err == nil {
 		if preparedexp, err := parsedexp.Prepare(&Person{}); err == nil {
-			if completedexpr, err := preparedexp.Complete(&Person{}, &Person{}); err == nil {
+			if completedexpr, err := preparedexp.Complete(&Person{}); err == nil {
 				//if completedexpr, err := preparedexp.Complete(&Person{}, &Person{Income: 3500}); err == nil {
 				fmt.Printf("Parsed AST: %+v\n", parsedexp)
 				fmt.Printf("Prepared query: %s\n", completedexpr.Sql())
