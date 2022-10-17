@@ -373,7 +373,7 @@ type ParsedExpr struct {
 }
 
 func generateOutputInfo(op *outputPart, targetInfo sqlairreflect.Info) OutputInfo {
-	targetStruct := targetInfo.(sqlairreflect.Struct)
+	targetStruct := targetInfo
 
 	tagNameList := make([]string, 0)
 	for tagName, _ := range targetStruct.Fields { // range over a map iterates over key/value pairs
@@ -576,7 +576,7 @@ func (ce *CompletedExpr) Exec(db *sql.DB, parts []Part, argTypes typeMap) error 
 		case *inputPart:
 			ip := part.(*inputPart)
 			infstruct := argTypes[ip.TypeExpr.Type]
-			structfield := infstruct.(sqlairreflect.Struct).Fields[ip.TypeExpr.Field]
+			structfield := infstruct.Fields[ip.TypeExpr.Field]
 			fieldindex := structfield.Index
 			val := reflect.ValueOf(ce.arguments[pi])
 			val = reflect.Indirect(val)
@@ -622,7 +622,7 @@ func (ce *CompletedExpr) Scan(parts []Part, argTypes typeMap, outputs ...any) er
 	ce.rows.Close()
 
 	for i, oi := range ce.outputSpecs {
-		outputStruct := argTypes[oi.OutputTypeName].(sqlairreflect.Struct)
+		outputStruct := argTypes[oi.OutputTypeName]
 		s := reflect.ValueOf(outputs[i]).Elem()
 
 		for _, colName := range oi.OutputColumns {
@@ -800,7 +800,7 @@ func (op *outputPart) ToSql(pe *PreparedExpr) (string, error) {
 	// print that. We do need to print the columns though (if any)
 	// There are two cases here
 	var out string
-	sf := pe.ArgTypes[op.TypeName()].(sqlairreflect.Struct)
+	sf := pe.ArgTypes[op.TypeName()]
 	if len(op.Columns) != 0 {
 		// Case 1
 		// foo as &Type.Field --> print foo

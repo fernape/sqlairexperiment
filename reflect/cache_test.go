@@ -70,6 +70,22 @@ func TestReflectStruct(t *testing.T) {
 	assert.True(t, name.OmitEmpty)
 }
 
+func TestReflectM(t *testing.T) {
+	var mymap M
+	mymap = make(M)
+	mymap["foo"] = 7
+	mymap["bar"] = "baz"
+
+	info, err := Cache().Reflect(mymap)
+	assert.Nil(t, err)
+	st, ok := info.(Map)
+	assert.True(t, ok)
+
+	t.Logf("%+v", info)
+	t.Log("Hello")
+	t.Logf("%+v", st)
+}
+
 func TestReflectBadTagError(t *testing.T) {
 	type something struct {
 		ID int64 `db:"id,bad-juju"`

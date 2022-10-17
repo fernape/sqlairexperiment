@@ -21,12 +21,12 @@ type cache struct {
 func (r *cache) Reflect(value any) (Info, error) {
 
 	if value == (any)(nil) {
-		return Struct{}, fmt.Errorf("Can not reflect nil value")
+		return Info{}, fmt.Errorf("Can not reflect nil value")
 	}
 
 	v := reflect.ValueOf(value)
 	if v.IsNil() {
-		return Struct{}, fmt.Errorf("Can not reflect nil value")
+		return Info{}, fmt.Errorf("Can not reflect nil value")
 	}
 	v = reflect.Indirect(v)
 
@@ -39,7 +39,7 @@ func (r *cache) Reflect(value any) (Info, error) {
 
 	ri, err := generate(v)
 	if err != nil {
-		return Struct{}, err
+		return Info{}, err
 	}
 	r.cache[v.Type()] = ri
 	return ri, nil
@@ -53,40 +53,52 @@ func generate(value reflect.Value) (Info, error) {
 
 	// If this is a not a struct, we can not provide
 	// any further reflection information.
-	// FIXME: We need to support &M derived from map[string]any
 	if value.Kind() != reflect.Struct {
-		return Value{value: value}, nil
+		if value.Kind() != reflect.Map && reflect.TypeOf(value).Name() != "sqlair.M" {
+			return Info{value: value}, nil
+		}
 	}
 
-	info := Struct{
+	info := Info{
 		Fields: make(map[string]Field),
 		Tags:   make(map[string]string),
 		value:  value,
 	}
 
-	typ := value.Type()
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		// Fields without a "db" tag are outside of Sqlair's remit.
-		tag := field.Tag.Get("db")
-		if tag == "" {
-			continue
-		}
+	switch value.Kind() {
+	case reflect.Struct:
+		typ := value.Type()
+		for i := 0; i < typ.NumField(); i++ {
+			field := typ.Field(i)
+			// Fields without a "db" tag are outside of Sqlair's remit.
+			tag := field.Tag.Get("db")
+			if tag == "" {
+				continue
+			}
 
-		tag, omitEmpty, err := parseTag(tag)
-		if err != nil {
-			return Value{}, err
-		}
+			tag, omitEmpty, err := parseTag(tag)
+			if err != nil {
+				return Info{}, err
+			}
 
-		info.Fields[tag] = Field{
-			Name:      field.Name,
-			Index:     i,
-			OmitEmpty: omitEmpty,
-			value:     value.Field(i),
+			info.Fields[tag] = Field{
+				Name:      field.Name,
+				Index:     i,
+				OmitEmpty: omitEmpty,
+				value:     value.Field(i),
+			}
+			info.Tags[field.Name] = tag
 		}
-		info.Tags[field.Name] = tag
+		return info, nil
+	case reflect.Map:
+		info := Info{
+			Fields: make(map[string]Field),
+			Tags:   make(map[string]string),
+			value:  value,
+		}
+		return info, nil
+
 	}
-
 	return info, nil
 }
 

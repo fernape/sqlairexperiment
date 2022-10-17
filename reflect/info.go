@@ -4,28 +4,6 @@ import (
 	"reflect"
 )
 
-// Info describes the ability to return reflection information.
-type Info interface {
-	Name() string
-	Kind() reflect.Kind
-}
-
-// Value represents reflection information for a simple type.
-// It wraps a reflect.Value in order to implement Info.
-type Value struct {
-	value reflect.Value
-}
-
-// Kind returns the Value's reflect.Kind.
-func (r Value) Kind() reflect.Kind {
-	return r.value.Kind()
-}
-
-// Name returns the name of the Value's type.
-func (r Value) Name() string {
-	return r.value.Type().Name()
-}
-
 // Field represents a single field from a struct type.
 type Field struct {
 	value reflect.Value
@@ -42,7 +20,7 @@ type Field struct {
 }
 
 // Struct represents reflected information about a struct type.
-type Struct struct {
+type Info struct {
 	value reflect.Value
 
 	// Fields maps "db" tags to struct fields.
@@ -53,11 +31,13 @@ type Struct struct {
 }
 
 // Kind returns the Struct's reflect.Kind.
-func (r Struct) Kind() reflect.Kind {
-	return r.value.Kind()
+func (i Info) Kind() reflect.Kind {
+	return i.value.Kind()
 }
 
 // Name returns the name of the Struct's type.
-func (r Struct) Name() string {
-	return r.value.Type().Name()
+func (i Info) Name() string {
+	return i.value.Type().Name()
 }
+
+type M map[string]any
