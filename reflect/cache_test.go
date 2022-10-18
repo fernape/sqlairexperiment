@@ -29,9 +29,6 @@ func TestReflectSimpleConcurrent(t *testing.T) {
 	assert.Equal(t, reflect.Int64, info.Kind())
 	assert.Equal(t, "int64", info.Name())
 
-	_, ok := info.(Value)
-	assert.True(t, ok)
-
 	wg.Wait()
 }
 
@@ -54,17 +51,14 @@ func TestReflectStruct(t *testing.T) {
 	assert.Equal(t, reflect.Struct, info.Kind())
 	assert.Equal(t, "something", info.Name())
 
-	st, ok := info.(Struct)
-	assert.True(t, ok)
+	assert.Len(t, info.Fields, 2)
 
-	assert.Len(t, st.Fields, 2)
-
-	id, ok := st.Fields["id"]
+	id, ok := info.Fields["id"]
 	assert.True(t, ok)
 	assert.Equal(t, "ID", id.Name)
 	assert.False(t, id.OmitEmpty)
 
-	name, ok := st.Fields["name"]
+	name, ok := info.Fields["name"]
 	assert.True(t, ok)
 	assert.Equal(t, "Name", name.Name)
 	assert.True(t, name.OmitEmpty)
@@ -78,12 +72,11 @@ func TestReflectM(t *testing.T) {
 
 	info, err := Cache().Reflect(mymap)
 	assert.Nil(t, err)
-	st, ok := info.(Map)
-	assert.True(t, ok)
 
-	t.Logf("%+v", info)
-	t.Log("Hello")
-	t.Logf("%+v", st)
+	assert.Len(t, info.Fields, 2)
+	foo, ok := info.Fields["foo"]
+	assert.True(t, ok)
+	assert.Equal(t, "foo", foo.Name)
 }
 
 func TestReflectBadTagError(t *testing.T) {

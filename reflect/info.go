@@ -30,12 +30,12 @@ type Info struct {
 	Tags map[string]string
 }
 
-// Kind returns the Struct's reflect.Kind.
+// Kind returns the Info's reflect.Kind.
 func (i Info) Kind() reflect.Kind {
 	return i.value.Kind()
 }
 
-// Name returns the name of the Struct's type.
+// Name returns the name of the Info's type.
 func (i Info) Name() string {
 	return i.value.Type().Name()
 }

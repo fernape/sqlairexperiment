@@ -25,9 +25,7 @@ func (r *cache) Reflect(value any) (Info, error) {
 	}
 
 	v := reflect.ValueOf(value)
-	if v.IsNil() {
-		return Info{}, fmt.Errorf("Can not reflect nil value")
-	}
+
 	v = reflect.Indirect(v)
 
 	r.mutex.Lock()
@@ -91,10 +89,15 @@ func generate(value reflect.Value) (Info, error) {
 		}
 		return info, nil
 	case reflect.Map:
-		info := Info{
-			Fields: make(map[string]Field),
-			Tags:   make(map[string]string),
-			value:  value,
+		for _, key := range value.MapKeys() {
+			fmt.Printf("%s\n", key.String())
+			info.Fields[key.String()] = Field{
+				Name:      key.String(),
+				Index:     -1,
+				OmitEmpty: false,
+				value:     value.MapIndex(key),
+			}
+			//info.Tags[field.Name] = tag
 		}
 		return info, nil
 
