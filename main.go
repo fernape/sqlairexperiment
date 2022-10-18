@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	sqlairreflect "sqlairtest/reflect"
+	typeinfo "sqlairtest/typeinfo"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -372,7 +372,7 @@ type ParsedExpr struct {
 	parts []Part
 }
 
-func generateOutputInfo(op *outputPart, targetInfo sqlairreflect.Info) OutputInfo {
+func generateOutputInfo(op *outputPart, targetInfo typeinfo.Info) OutputInfo {
 	targetStruct := targetInfo
 
 	tagNameList := make([]string, 0)
@@ -666,7 +666,7 @@ func (ce *CompletedExpr) Scan(parts []Part, argTypes typeMap, outputs ...any) er
 //		ON p.manager_id = m.id
 //	 WHERE p.name = 'Fred'`, Person{}, Manager{})
 func typesForStatement(args []any) (typeMap, error) {
-	c := sqlairreflect.Cache()
+	c := typeinfo.Cache()
 	argTypes := make(typeMap)
 	for _, arg := range args {
 		// reflected is some type of the Info interface, right now it'll only be a Struct struct
@@ -688,7 +688,7 @@ func typesForStatement(args []any) (typeMap, error) {
 
 // typeMap is a convenience type alias for reflection
 // information indexed by type name.
-type typeMap = map[string]sqlairreflect.Info
+type typeMap = map[string]typeinfo.Info
 
 // Part defines a simple interface for all the different parts that
 // make up a ParsedExpr
