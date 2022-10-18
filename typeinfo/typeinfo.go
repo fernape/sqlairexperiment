@@ -9,17 +9,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Cache is responsible for generating, caching and retrieving reflection
-// information for use in parsing and executing Sqlair DSL statements.
-type cache struct {
-	mutex sync.RWMutex
-	cache map[reflect.Type]Info
-}
+var cmutex sync.RWMutex
+var cache = make(map[reflect.Type]Info)
 
 // Reflect will return the Info of a given type,
 // generating and caching as required.
-func (r *cache) Reflect(value any) (Info, error) {
-
+func GetTypeInfo(value any) (Info, error) {
 	if value == (any)(nil) {
 		return Info{}, fmt.Errorf("Can not reflect nil value")
 	}
@@ -28,18 +23,21 @@ func (r *cache) Reflect(value any) (Info, error) {
 
 	v = reflect.Indirect(v)
 
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	if rs, ok := r.cache[v.Type()]; ok {
-		return rs, nil
+	cmutex.RLock()
+	info, found := cache[v.Type()]
+	cmutex.RUnlock()
+	if found {
+		return info, nil
 	}
 
 	ri, err := generate(v)
 	if err != nil {
 		return Info{}, err
 	}
-	r.cache[v.Type()] = ri
+
+	cmutex.Lock()
+	cache[v.Type()] = ri
+	cmutex.Unlock()
 	return ri, nil
 }
 

@@ -666,11 +666,10 @@ func (ce *CompletedExpr) Scan(parts []Part, argTypes typeMap, outputs ...any) er
 //		ON p.manager_id = m.id
 //	 WHERE p.name = 'Fred'`, Person{}, Manager{})
 func typesForStatement(args []any) (typeMap, error) {
-	c := typeinfo.Cache()
 	argTypes := make(typeMap)
 	for _, arg := range args {
 		// reflected is some type of the Info interface, right now it'll only be a Struct struct
-		reflected, err := c.Reflect(arg)
+		reflected, err := typeinfo.GetTypeInfo(arg)
 		if err != nil {
 			return nil, err
 		}

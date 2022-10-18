@@ -18,12 +18,12 @@ func TestReflectSimpleConcurrent(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		wg.Add(1)
 		go func() {
-			_, _ = Cache().Reflect(num)
+			_, _ = GetTypeInfo(num)
 			wg.Done()
 		}()
 	}
 
-	info, err := Cache().Reflect(num)
+	info, err := GetTypeInfo(num)
 	assert.Nil(t, err)
 
 	assert.Equal(t, reflect.Int64, info.Kind())
@@ -45,7 +45,7 @@ func TestReflectStruct(t *testing.T) {
 		NotInDB: "doesn't matter",
 	}
 
-	info, err := Cache().Reflect(s)
+	info, err := GetTypeInfo(s)
 	assert.Nil(t, err)
 
 	assert.Equal(t, reflect.Struct, info.Kind())
@@ -70,7 +70,7 @@ func TestReflectM(t *testing.T) {
 	mymap["foo"] = 7
 	mymap["bar"] = "baz"
 
-	info, err := Cache().Reflect(mymap)
+	info, err := GetTypeInfo(mymap)
 	assert.Nil(t, err)
 
 	assert.Len(t, info.Fields, 2)
@@ -86,6 +86,6 @@ func TestReflectBadTagError(t *testing.T) {
 
 	s := something{ID: 99}
 
-	_, err := Cache().Reflect(s)
+	_, err := GetTypeInfo(s)
 	assert.Error(t, errors.New(`unexpected tag value "bad-juju"`), err)
 }
