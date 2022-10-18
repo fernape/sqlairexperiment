@@ -88,7 +88,6 @@ func generate(value reflect.Value) (Info, error) {
 		return info, nil
 	case reflect.Map:
 		for _, key := range value.MapKeys() {
-			fmt.Printf("%s\n", key.String())
 			info.Fields[key.String()] = Field{
 				Name:      key.String(),
 				Index:     -1,
