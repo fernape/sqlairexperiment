@@ -27,9 +27,6 @@ func TestReflectTypeInfo(t *testing.T) {
 	assert.Equal(t, reflect.Struct, info.Kind())
 	assert.Equal(t, "something", info.Name())
 
-	//st, ok := info.(TypeInfo)
-	//assert.True(t, ok)
-
 	assert.Len(t, info.Fields, 2)
 
 	id, ok := info.Fields["id"]
@@ -55,10 +52,8 @@ func TestSimpleType(t *testing.T) {
 	assert.NotNil(t, info_id)
 
 	assert.NotEqual(t, info_id.value, reflect.Struct)
-	assert.Equal(t, reflect.TypeOf(info_id.value), myID)
-
-	//	var otherId myID
-	//	otherId = reflect.Value(info_id.value).Elem()
+	v := info_id.value
+	assert.Equal(t, "myID", v.Type().Name())
 
 	info_name, err := Generate(name)
 	assert.NotNil(t, info_name)

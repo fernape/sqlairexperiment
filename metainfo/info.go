@@ -1,6 +1,7 @@
 package metainfo
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -46,6 +47,9 @@ func (r TypeInfo) Name() string {
 // generate produces and returns reflection information for the input
 // reflect.Value that is specifically required for Sqlair operation.
 func Generate(v any) (TypeInfo, error) {
+	if v == nil {
+		return TypeInfo{}, fmt.Errorf("Can not reflect nil value")
+	}
 	value := reflect.ValueOf(v)
 	// Dereference the pointer if it is one.
 	value = reflect.Indirect(value)

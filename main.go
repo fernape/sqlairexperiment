@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	sqlairreflect "sqlairtest/reflect"
+	sqlairreflect "sqlairtest/metainfo"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -372,8 +372,8 @@ type ParsedExpr struct {
 	parts []Part
 }
 
-func generateOutputInfo(op *outputPart, targetInfo sqlairreflect.Info) OutputInfo {
-	targetStruct := targetInfo.(sqlairreflect.Struct)
+func generateOutputInfo(op *outputPart, targetInfo sqlairreflect.TypeInfo) OutputInfo {
+	targetStruct := targetInfo
 
 	tagNameList := make([]string, 0)
 	for tagName, _ := range targetStruct.Fields { // range over a map iterates over key/value pairs
@@ -576,7 +576,7 @@ func (ce *CompletedExpr) Exec(db *sql.DB, parts []Part, argTypes typeMap) error 
 		case *inputPart:
 			ip := part.(*inputPart)
 			infstruct := argTypes[ip.TypeExpr.Type]
-			structfield := infstruct.(sqlairreflect.Struct).Fields[ip.TypeExpr.Field]
+			structfield := infstruct.Fields[ip.TypeExpr.Field]
 			fieldindex := structfield.Index
 			val := reflect.ValueOf(ce.arguments[pi])
 			val = reflect.Indirect(val)
@@ -622,7 +622,7 @@ func (ce *CompletedExpr) Scan(parts []Part, argTypes typeMap, outputs ...any) er
 	ce.rows.Close()
 
 	for i, oi := range ce.outputSpecs {
-		outputStruct := argTypes[oi.OutputTypeName].(sqlairreflect.Struct)
+		outputStruct := argTypes[oi.OutputTypeName]
 		s := reflect.ValueOf(outputs[i]).Elem()
 
 		for _, colName := range oi.OutputColumns {
@@ -666,11 +666,10 @@ func (ce *CompletedExpr) Scan(parts []Part, argTypes typeMap, outputs ...any) er
 //		ON p.manager_id = m.id
 //	 WHERE p.name = 'Fred'`, Person{}, Manager{})
 func typesForStatement(args []any) (typeMap, error) {
-	c := sqlairreflect.Cache()
 	argTypes := make(typeMap)
 	for _, arg := range args {
 		// reflected is some type of the Info interface, right now it'll only be a Struct struct
-		reflected, err := c.Reflect(arg)
+		reflected, err := sqlairreflect.Generate(arg)
 		if err != nil {
 			return nil, err
 		}
@@ -688,7 +687,7 @@ func typesForStatement(args []any) (typeMap, error) {
 
 // typeMap is a convenience type alias for reflection
 // information indexed by type name.
-type typeMap = map[string]sqlairreflect.Info
+type typeMap = map[string]sqlairreflect.TypeInfo
 
 // Part defines a simple interface for all the different parts that
 // make up a ParsedExpr
@@ -800,7 +799,7 @@ func (op *outputPart) ToSql(pe *PreparedExpr) (string, error) {
 	// print that. We do need to print the columns though (if any)
 	// There are two cases here
 	var out string
-	sf := pe.ArgTypes[op.TypeName()].(sqlairreflect.Struct)
+	sf := pe.ArgTypes[op.TypeName()]
 	if len(op.Columns) != 0 {
 		// Case 1
 		// foo as &Type.Field --> print foo
