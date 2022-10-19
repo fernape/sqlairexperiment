@@ -90,11 +90,9 @@ func generate(value reflect.Value) (Info, error) {
 		for _, key := range value.MapKeys() {
 			info.Fields[key.String()] = Field{
 				Name:      key.String(),
-				Index:     -1,
 				OmitEmpty: false,
 				value:     value.MapIndex(key),
 			}
-			//info.Tags[field.Name] = tag
 		}
 		return info, nil
 
