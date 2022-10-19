@@ -40,7 +40,8 @@ func (i Info) Name() string {
 	return i.value.Type().Name()
 }
 
-// Returns the reflect.Type of the value embedded in the data Info strcuture
+// GetType returns the reflect.Type of the value embedded in the data Info
+// strcuture.
 func (i Info) GetType() reflect.Type {
 	return i.value.Type()
 }
