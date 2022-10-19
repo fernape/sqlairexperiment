@@ -40,4 +40,8 @@ func (i Info) Name() string {
 	return i.value.Type().Name()
 }
 
+func (i Info) getType() reflect.Type {
+	return i.value.Type()
+}
+
 type M map[string]any
