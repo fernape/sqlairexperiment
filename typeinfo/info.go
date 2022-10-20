@@ -50,30 +50,61 @@ func (i Info) GetType() reflect.Type {
 // GetFieldValue returns the real, concrete value for the fieldName passed as
 // parameter if found and true indicating it was found.  If not found, returns
 // an empty interface and false.
-func GetFieldValue(st any, fieldName string) (any, error) {
-	i, _ := GetTypeInfo(st)
+func GetFieldValue(obj any, fieldName string) (any, error) {
+	if reflect.ValueOf(obj).Kind() == reflect.Map && reflect.TypeOf(obj).Name() == "M" {
+		v := obj.(M)
+		k, found := v[fieldName]
+		if !found {
+			return nil, fmt.Errorf("field '%s' not found", fieldName)
+		}
+		return k, nil
+	}
+	i, _ := GetTypeInfo(obj)
 	v, found := i.Fields[fieldName]
 	if !found {
 		return nil, fmt.Errorf("field '%s' not found", fieldName)
 	}
-	return reflect.ValueOf(st).Field(v.Index).Interface(), nil
+	return reflect.ValueOf(obj).Field(v.Index).Interface(), nil
 }
 
 // SetFieldValue sets the field corresponding to the tagName passed as
 // paremeter, to the value "value" passed as parameter. Returns true if the
 // value was set, false otherwise.
-func SetFieldValue(st any, tagName string, value any) error {
-	i, _ := GetTypeInfo(st)
+func SetFieldValue(obj any, tagName string, value any) error {
+	//m, _ := GetTypeInfo(obj)
+	//fmt.Printf("%+v\n", m)
+	//fmt.Printf("--Enter--\n")
+	//fmt.Printf("%+v\n%+v\n", reflect.ValueOf(obj).Kind(), reflect.TypeOf(obj).Name())
+	//fmt.Printf("-----\n")
+	//fmt.Printf("%+v\n", reflect.Indirect(reflect.ValueOf(obj)).Type())
+	//fmt.Printf("-----\n")
+	//fmt.Printf("%s\n", reflect.TypeOf(obj).Name())
+	//fmt.Printf("-----\n")
+	//n := reflect.Indirect(reflect.ValueOf(obj)).Type().Name()
+	//fmt.Printf("n: %s\n", n)
+	//if n == "M" {
+	//if m.Kind() == reflect.Map && n == "M" {
+	//	v := obj.(*M)
+	//	_, found := v[tagName]
+	//	if !found {
+	//		return fmt.Errorf("field '%s' not found", tagName)
+	//	}
+	//	v[tagName] = reflect.ValueOf(value).Interface()
+	//	return nil
+	//}
+
+	i, _ := GetTypeInfo(obj)
 	field, found := i.Fields[tagName]
 	if !found {
 		return fmt.Errorf("field '%s' not found", tagName)
 	}
 
 	if field.Type != reflect.TypeOf(value) {
+		//fmt.Printf("Types: %v\n%v", field.Type, reflect.TypeOf(value))
 		return fmt.Errorf("type missmatch")
 	}
 
-	s := reflect.ValueOf(st).Elem()
+	s := reflect.ValueOf(obj).Elem()
 
 	if !s.Field(field.Index).CanSet() {
 		return fmt.Errorf("%s (%s) is not settable", field.Name, tagName)

@@ -48,7 +48,7 @@ func generate(value reflect.Value) (Info, error) {
 	// If this is a not a struct, we can not provide
 	// any further reflection information.
 	if value.Kind() != reflect.Struct {
-		if value.Kind() != reflect.Map && reflect.TypeOf(value).Name() != "sqlair.M" {
+		if value.Kind() != reflect.Map && reflect.TypeOf(value).Name() != "M" {
 			return Info{value: value}, nil
 		}
 	}

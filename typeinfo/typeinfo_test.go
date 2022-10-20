@@ -106,6 +106,39 @@ func TestGetSetStruct(t *testing.T) {
 	}
 }
 
+func TestGetSetMap(t *testing.T) {
+	var m = make(M)
+	m["id"] = 99
+	m["name"] = "Jon Doe"
+
+	{
+		v, err := GetFieldValue(m, "id")
+		assert.Equal(t, nil, err)
+		assert.Equal(t, 99, v)
+	}
+	{
+		v, err := GetFieldValue(m, "nope")
+		assert.Equal(t, fmt.Errorf("field 'nope' not found"), err)
+		assert.Equal(t, nil, v)
+	}
+	//{
+	//	err := SetFieldValue(&m, "id", 33)
+	//	assert.Nil(t, err)
+	//	var v any
+	//	v, err = GetFieldValue(m, "id")
+	//	assert.Nil(t, err)
+	//	assert.Equal(t, 33, v)
+	//}
+	//{
+	//	err := SetFieldValue(&m, "id", "this is a string")
+	//	assert.Equal(t, fmt.Errorf("type missmatch"), err)
+	//	var v any
+	//	v, err = GetFieldValue(m, "id")
+	//	assert.Nil(t, err)
+	//	assert.Equal(t, (int64)(33), v)
+	//}
+}
+
 func TestReflectM(t *testing.T) {
 	var mymap M
 	mymap = make(M)
