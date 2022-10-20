@@ -1,6 +1,7 @@
 package typeinfo
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -44,6 +45,42 @@ func (i Info) Name() string {
 // strcuture.
 func (i Info) GetType() reflect.Type {
 	return i.value.Type()
+}
+
+// GetFieldValue returns the real, concrete value for the fieldName passed as
+// parameter if found and true indicating it was found.  If not found, returns
+// an empty interface and false.
+func GetFieldValue(st any, fieldName string) (any, error) {
+	i, _ := GetTypeInfo(st)
+	v, found := i.Fields[fieldName]
+	if !found {
+		return nil, fmt.Errorf("field %s not found", fieldName)
+	}
+	return reflect.ValueOf(st).Field(v.Index).Interface(), nil
+}
+
+// SetFieldValue sets the field corresponding to the tagName passed as
+// paremeter, to the value "value" passed as parameter. Returns true if the
+// value was set, false otherwise.
+func SetFieldValue(st any, tagName string, value any) error {
+	i, _ := GetTypeInfo(st)
+	field, found := i.Fields[tagName]
+	if !found {
+		return fmt.Errorf("field %s not found", tagName)
+	}
+
+	if field.value.Type() != reflect.TypeOf(value) {
+		return fmt.Errorf("type missmatch")
+	}
+
+	s := reflect.ValueOf(st).Elem()
+
+	if !s.Field(field.Index).CanSet() {
+		return fmt.Errorf("%s (%s) is not settable", field.Name, tagName)
+	}
+
+	s.Field(field.Index).Set(reflect.ValueOf(value))
+	return nil
 }
 
 type M map[string]any
