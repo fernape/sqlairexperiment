@@ -1,6 +1,7 @@
 package typeinfo
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 	"testing"
@@ -57,27 +58,52 @@ func TestReflectStruct(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "ID", id.Name)
 	assert.False(t, id.OmitEmpty)
-	v, err := GetFieldValue(s, "id")
-	assert.Equal(t, nil, err)
-	assert.Equal(t, (int64)(99), v)
+
+	name, ok := info.Fields["name"]
+	assert.True(t, ok)
+	assert.Equal(t, "Name", name.Name)
+	assert.True(t, name.OmitEmpty)
+}
+
+func TestGetSetStruct(t *testing.T) {
+	type something struct {
+		ID      int64  `db:"id"`
+		Name    string `db:"name"`
+		NotInDB string
+	}
+
+	s := something{
+		ID:      99,
+		Name:    "foo",
+		NotInDB: "bar",
+	}
+
+	{
+		v, err := GetFieldValue(s, "id")
+		assert.Equal(t, nil, err)
+		assert.Equal(t, (int64)(99), v)
+	}
 	{
 		v, err := GetFieldValue(s, "nope")
-		assert.NotEqual(t, nil, err)
+		assert.Equal(t, fmt.Errorf("field 'nope' not found"), err)
 		assert.Equal(t, nil, v)
 	}
 	{
-		err = SetFieldValue(&s, "id", (int64)(33))
+		err := SetFieldValue(&s, "id", (int64)(33))
 		assert.Nil(t, err)
 		var v any
 		v, err = GetFieldValue(s, "id")
 		assert.Nil(t, err)
 		assert.Equal(t, (int64)(33), v)
 	}
-
-	name, ok := info.Fields["name"]
-	assert.True(t, ok)
-	assert.Equal(t, "Name", name.Name)
-	assert.True(t, name.OmitEmpty)
+	{
+		err := SetFieldValue(&s, "id", "this is a string")
+		assert.Equal(t, fmt.Errorf("type missmatch"), err)
+		var v any
+		v, err = GetFieldValue(s, "id")
+		assert.Nil(t, err)
+		assert.Equal(t, (int64)(33), v)
+	}
 }
 
 func TestReflectM(t *testing.T) {

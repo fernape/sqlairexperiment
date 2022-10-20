@@ -54,7 +54,7 @@ func GetFieldValue(st any, fieldName string) (any, error) {
 	i, _ := GetTypeInfo(st)
 	v, found := i.Fields[fieldName]
 	if !found {
-		return nil, fmt.Errorf("field %s not found", fieldName)
+		return nil, fmt.Errorf("field '%s' not found", fieldName)
 	}
 	return reflect.ValueOf(st).Field(v.Index).Interface(), nil
 }
@@ -66,7 +66,7 @@ func SetFieldValue(st any, tagName string, value any) error {
 	i, _ := GetTypeInfo(st)
 	field, found := i.Fields[tagName]
 	if !found {
-		return fmt.Errorf("field %s not found", tagName)
+		return fmt.Errorf("field '%s' not found", tagName)
 	}
 
 	if field.Type != reflect.TypeOf(value) {
