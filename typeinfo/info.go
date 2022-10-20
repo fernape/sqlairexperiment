@@ -7,7 +7,7 @@ import (
 
 // Field represents a single field from a struct type.
 type Field struct {
-	value reflect.Value
+	Type reflect.Type
 
 	// Name is the name of the struct field.
 	Name string
@@ -69,7 +69,7 @@ func SetFieldValue(st any, tagName string, value any) error {
 		return fmt.Errorf("field %s not found", tagName)
 	}
 
-	if field.value.Type() != reflect.TypeOf(value) {
+	if field.Type != reflect.TypeOf(value) {
 		return fmt.Errorf("type missmatch")
 	}
 

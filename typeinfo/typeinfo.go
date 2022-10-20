@@ -81,7 +81,7 @@ func generate(value reflect.Value) (Info, error) {
 				Name:      field.Name,
 				Index:     i,
 				OmitEmpty: omitEmpty,
-				value:     value.Field(i),
+				Type:      reflect.TypeOf(value.Field(i).Interface()),
 			}
 			info.Tags[field.Name] = tag
 		}
@@ -91,7 +91,7 @@ func generate(value reflect.Value) (Info, error) {
 			info.Fields[key.String()] = Field{
 				Name:      key.String(),
 				OmitEmpty: false,
-				value:     value.MapIndex(key),
+				Type:      reflect.TypeOf(value.MapIndex(key).Interface()),
 			}
 		}
 		return info, nil
