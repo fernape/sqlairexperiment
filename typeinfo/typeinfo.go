@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-
-	"github.com/pkg/errors"
 )
 
 var cmutex sync.RWMutex
@@ -108,7 +106,7 @@ func parseTag(tag string) (string, bool, error) {
 	var omitEmpty bool
 	if len(options) > 1 {
 		if strings.ToLower(options[1]) != "omitempty" {
-			return "", false, errors.Errorf("unexpected tag value %q", options[1])
+			return "", false, fmt.Errorf("unexpected tag value %q", options[1])
 		}
 		omitEmpty = true
 	}
