@@ -24,11 +24,11 @@ type Field struct {
 type Info struct {
 	value reflect.Value
 
-	// Fields maps "db" tags to struct fields.
+	// TagsToFields  maps "db" tags to struct fields.
 	// Sqlair does not care about fields without a "db" tag.
-	Fields map[string]Field
-	// Tags maps field names to tags
-	Tags map[string]string
+	TagsToFields map[string]Field
+	// FieldsToTags maps field names to tags
+	FieldsToTags map[string]string
 }
 
 // Kind returns the Info's reflect.Kind.
@@ -60,7 +60,7 @@ func GetFieldValue(obj any, tagName string) (any, error) {
 		return k, nil
 	}
 	i, _ := GetTypeInfo(obj)
-	v, found := i.Fields[tagName]
+	v, found := i.TagsToFields[tagName]
 	if !found {
 		return nil, fmt.Errorf("field '%s' not found", tagName)
 	}
@@ -94,7 +94,7 @@ func SetFieldValue(obj any, tagName string, value any) error {
 	//}
 
 	i, _ := GetTypeInfo(obj)
-	field, found := i.Fields[tagName]
+	field, found := i.TagsToFields[tagName]
 	if !found {
 		return fmt.Errorf("field '%s' not found", tagName)
 	}

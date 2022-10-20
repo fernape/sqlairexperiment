@@ -54,9 +54,9 @@ func generate(value reflect.Value) (Info, error) {
 	}
 
 	info := Info{
-		Fields: make(map[string]Field),
-		Tags:   make(map[string]string),
-		value:  value,
+		TagsToFields: make(map[string]Field),
+		FieldsToTags: make(map[string]string),
+		value:        value,
 	}
 
 	switch value.Kind() {
@@ -75,18 +75,18 @@ func generate(value reflect.Value) (Info, error) {
 				return Info{}, err
 			}
 
-			info.Fields[tag] = Field{
+			info.TagsToFields[tag] = Field{
 				Name:      field.Name,
 				Index:     i,
 				OmitEmpty: omitEmpty,
 				Type:      reflect.TypeOf(value.Field(i).Interface()),
 			}
-			info.Tags[field.Name] = tag
+			info.FieldsToTags[field.Name] = tag
 		}
 		return info, nil
 	case reflect.Map:
 		for _, key := range value.MapKeys() {
-			info.Fields[key.String()] = Field{
+			info.TagsToFields[key.String()] = Field{
 				Name:      key.String(),
 				OmitEmpty: false,
 				Type:      reflect.TypeOf(value.MapIndex(key).Interface()),
