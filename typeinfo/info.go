@@ -50,19 +50,19 @@ func (i Info) GetType() reflect.Type {
 // GetFieldValue returns the real, concrete value for the fieldName passed as
 // parameter if found and true indicating it was found.  If not found, returns
 // an empty interface and false.
-func GetFieldValue(obj any, fieldName string) (any, error) {
+func GetFieldValue(obj any, tagName string) (any, error) {
 	if reflect.ValueOf(obj).Kind() == reflect.Map && reflect.TypeOf(obj).Name() == "M" {
 		v := obj.(M)
-		k, found := v[fieldName]
+		k, found := v[tagName]
 		if !found {
-			return nil, fmt.Errorf("field '%s' not found", fieldName)
+			return nil, fmt.Errorf("field '%s' not found", tagName)
 		}
 		return k, nil
 	}
 	i, _ := GetTypeInfo(obj)
-	v, found := i.Fields[fieldName]
+	v, found := i.Fields[tagName]
 	if !found {
-		return nil, fmt.Errorf("field '%s' not found", fieldName)
+		return nil, fmt.Errorf("field '%s' not found", tagName)
 	}
 	return reflect.ValueOf(obj).Field(v.Index).Interface(), nil
 }
