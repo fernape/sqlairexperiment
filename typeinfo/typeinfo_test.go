@@ -6,7 +6,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -158,5 +157,5 @@ func TestReflectBadTagError(t *testing.T) {
 	s := something{ID: 99}
 
 	_, err := GetTypeInfo(s)
-	assert.Error(t, errors.New(`unexpected tag value "bad-juju"`), err)
+	assert.Error(t, fmt.Errorf(`unexpected tag value "bad-juju"`), err)
 }
