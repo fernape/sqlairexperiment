@@ -64,7 +64,7 @@ func GetFieldValue(obj any, tagName string) (any, error) {
 	if !found {
 		return nil, fmt.Errorf("field '%s' not found", tagName)
 	}
-	return reflect.ValueOf(obj).Field(v.Index).Interface(), nil
+	return reflect.Indirect(reflect.ValueOf(obj)).Field(v.Index).Interface(), nil
 }
 
 // SetFieldValue sets the field corresponding to the tagName passed as
