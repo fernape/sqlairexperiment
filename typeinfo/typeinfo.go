@@ -33,9 +33,12 @@ func GetTypeInfo(value any) (Info, error) {
 		return Info{}, err
 	}
 
-	cmutex.Lock()
-	cache[v.Type()] = ri
-	cmutex.Unlock()
+	// Do not cache for "M" types
+	if !(ri.Name() == "M" && ri.Kind() == reflect.Map) {
+		cmutex.Lock()
+		cache[v.Type()] = ri
+		cmutex.Unlock()
+	}
 	return ri, nil
 }
 
@@ -45,7 +48,7 @@ func generate(value reflect.Value) (Info, error) {
 	// Dereference the pointer if it is one.
 	value = reflect.Indirect(value)
 
-	// If this is a not a struct, we can not provide
+	// If this is a not a struct or a "M", we can not provide
 	// any further reflection information.
 	if value.Kind() != reflect.Struct {
 		if value.Kind() != reflect.Map && reflect.TypeOf(value).Name() != "M" {
