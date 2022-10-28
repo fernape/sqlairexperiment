@@ -189,23 +189,33 @@ func TestReflectSimpleTypes(t *testing.T) {
 }
 
 func TestGetSetSimpleTypes(t *testing.T) {
-	var i int
-	var s string
+	var err error
+	var info Info
+	{
+		var vi any
+
+		i := 99
+		info, err = GetTypeInfo(i)
+		assert.Nil(t, err)
+		vi, err = GetValue(info)
+		assert.Nil(t, err)
+		assert.Equal(t, i, vi)
+		err = SetValue(&i, "", 100)
+		assert.Nil(t, err)
+		assert.Equal(t, 100, i)
+	}
 
 	{
-		i = 99
-		info, err := GetTypeInfo(i)
+		var vs any
+
+		s := "foo"
+		info, err = GetTypeInfo(s)
 		assert.Nil(t, err)
-		vi, err2 := GetValue(info)
-		assert.Nil(t, err2)
-		assert.Equal(t, i, vi)
-	}
-	{
-		s = "foo"
-		info, err := GetTypeInfo(s)
-		assert.Nil(t, err)
-		vs, _ := GetValue(info)
+		vs, err = GetValue(info)
 		assert.Nil(t, err)
 		assert.Equal(t, s, vs)
+		err = SetValue(&s, "", "bar")
+		assert.Nil(t, err)
+		assert.Equal(t, "bar", s)
 	}
 }

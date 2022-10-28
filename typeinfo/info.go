@@ -103,6 +103,10 @@ func SetValue(obj any, name string, value any) error {
 		return nil
 	}
 
+	// For simple types
+	p := reflect.ValueOf(obj)
+	v := p.Elem()
+	v.Set(reflect.ValueOf(value))
 	return nil
 }
 
