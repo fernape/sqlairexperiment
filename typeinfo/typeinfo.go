@@ -1,0 +1,120 @@
+package typeinfo
+
+import (
+	"fmt"
+	"reflect"
+	"strings"
+	"sync"
+)
+
+var cmutex sync.RWMutex
+var cache = make(map[reflect.Type]Info)
+
+// Reflect will return the Info of a given type,
+// generating and caching as required.
+func GetTypeInfo(value any) (Info, error) {
+	if value == (any)(nil) {
+		return Info{}, fmt.Errorf("Can not reflect nil value")
+	}
+
+	v := reflect.ValueOf(value)
+
+	v = reflect.Indirect(v)
+
+	cmutex.RLock()
+	info, found := cache[v.Type()]
+	cmutex.RUnlock()
+	if found {
+		return info, nil
+	}
+
+	ri, err := generate(v)
+	if err != nil {
+		return Info{}, err
+	}
+
+	// Do not cache for "M" types
+	if !(ri.Name() == "M" && ri.Kind() == reflect.Map) {
+		cmutex.Lock()
+		//cache[v.Type()] = ri
+		cmutex.Unlock()
+	}
+	return ri, nil
+}
+
+// generate produces and returns reflection information for the input
+// reflect.Value that is specifically required for Sqlair operation.
+func generate(value reflect.Value) (Info, error) {
+	// Dereference the pointer if it is one.
+	value = reflect.Indirect(value)
+
+	// If this is a not a struct or a "M", we can not provide
+	// any further reflection information.
+	// TODO: Check and return error if this is not a struct, or a map of
+	// type sqlair.M or a normal variable.
+	if value.Kind() != reflect.Struct {
+		if value.Kind() != reflect.Map && reflect.TypeOf(value).Name() != "M" {
+			return Info{value: value}, nil
+		}
+	}
+
+	info := Info{
+		TagsToFields: make(map[string]Field),
+		FieldsToTags: make(map[string]string),
+		value:        value,
+	}
+
+	switch value.Kind() {
+	case reflect.Struct:
+		typ := value.Type()
+		for i := 0; i < typ.NumField(); i++ {
+			field := typ.Field(i)
+			// Fields without a "db" tag are outside of Sqlair's remit.
+			tag := field.Tag.Get("db")
+			if tag == "" {
+				continue
+			}
+
+			tag, omitEmpty, err := parseTag(tag)
+			if err != nil {
+				return Info{}, err
+			}
+
+			info.TagsToFields[tag] = Field{
+				Name:      field.Name,
+				Index:     i,
+				OmitEmpty: omitEmpty,
+				Type:      reflect.TypeOf(value.Field(i).Interface()),
+			}
+			info.FieldsToTags[field.Name] = tag
+		}
+		return info, nil
+	case reflect.Map:
+		for _, key := range value.MapKeys() {
+			info.TagsToFields[key.String()] = Field{
+				Name:      key.String(),
+				OmitEmpty: false,
+				Type:      reflect.TypeOf(value.MapIndex(key).Interface()),
+			}
+		}
+		return info, nil
+
+	}
+	return info, nil
+}
+
+// parseTag parses the input tag string and returns its
+// name and whether it contains the "omitempty" option.
+func parseTag(tag string) (string, bool, error) {
+	options := strings.Split(tag, ",")
+
+	var omitEmpty bool
+	if len(options) > 1 {
+		if strings.ToLower(options[1]) != "omitempty" {
+			return "", false, fmt.Errorf("unexpected tag value %q", options[1])
+		}
+		omitEmpty = true
+	}
+
+	return options[0], omitEmpty, nil
+}
