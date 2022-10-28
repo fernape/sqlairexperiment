@@ -26,8 +26,8 @@ func TestReflectSimpleConcurrent(t *testing.T) {
 	info, err := GetTypeInfo(num)
 	assert.Nil(t, err)
 
-	assert.Equal(t, reflect.Int64, info.Kind())
-	assert.Equal(t, "int64", info.Name())
+	assert.Equal(t, reflect.Int64, info.value.Kind())
+	assert.Equal(t, "int64", info.value.Type().Name())
 
 	wg.Wait()
 }
@@ -48,8 +48,8 @@ func TestReflectStruct(t *testing.T) {
 	info, err := GetTypeInfo(s)
 	assert.Nil(t, err)
 
-	assert.Equal(t, reflect.Struct, info.Kind())
-	assert.Equal(t, "something", info.Name())
+	assert.Equal(t, reflect.Struct, info.value.Kind())
+	assert.Equal(t, "something", info.value.Type().Name())
 
 	assert.Len(t, info.TagsToFields, 2)
 
@@ -80,30 +80,30 @@ func TestGetSetStruct(t *testing.T) {
 	info, err := GetTypeInfo(s)
 	assert.Nil(t, err)
 	{
-		v, err := GetFieldValue(info, "id")
+		v, err := GetValue(info, "id")
 		assert.Equal(t, nil, err)
 		assert.Equal(t, (int64)(99), v)
 	}
 	{
-		v, err := GetFieldValue(info, "nope")
+		v, err := GetValue(info, "nope")
 		assert.Equal(t, fmt.Errorf("field 'nope' not found"), err)
 		assert.Equal(t, nil, v)
 	}
 	{
-		err := SetFieldValue(&s, "id", (int64)(33))
+		err := SetValue(&s, "id", (int64)(33))
 		assert.Nil(t, err)
 		var v any
 		i, _ := GetTypeInfo(s)
-		v, err = GetFieldValue(i, "id")
+		v, err = GetValue(i, "id")
 		assert.Nil(t, err)
 		assert.Equal(t, (int64)(33), v)
 	}
 	{
-		err := SetFieldValue(&s, "id", "this is a string")
+		err := SetValue(&s, "id", "this is a string")
 		assert.Equal(t, fmt.Errorf("type missmatch"), err)
 		var v any
 		i, _ := GetTypeInfo(s)
-		v, err = GetFieldValue(i, "id")
+		v, err = GetValue(i, "id")
 		assert.Nil(t, err)
 		assert.Equal(t, (int64)(33), v)
 	}
@@ -117,25 +117,25 @@ func TestGetSetMap(t *testing.T) {
 	info, err := GetTypeInfo(m)
 	assert.Nil(t, err)
 	{
-		v, err := GetFieldValue(info, "id")
+		v, err := GetValue(info, "id")
 		assert.Equal(t, nil, err)
 		assert.Equal(t, 99, v)
 	}
 	{
-		v, err := GetFieldValue(info, "nope")
+		v, err := GetValue(info, "nope")
 		assert.Equal(t, fmt.Errorf("field 'nope' not found"), err)
 		assert.Equal(t, nil, v)
 	}
 	//{
-	//	err := SetFieldValue(&m, "id", 33)
+	//	err := SetValue(&m, "id", 33)
 	//	assert.Nil(t, err)
 	//	var v any
-	//	v, err = GetFieldValue(m, "id")
+	//	v, err = GetValue(m, "id")
 	//	assert.Nil(t, err)
 	//	assert.Equal(t, 33, v)
 	//}
 	//{
-	//	err := SetFieldValue(&m, "nope", 33)
+	//	err := SetValue(&m, "nope", 33)
 	//	assert.Equal(t, fmt.Errorf("'nope' key not found in map"), err)
 	//}
 }
@@ -164,4 +164,26 @@ func TestReflectBadTagError(t *testing.T) {
 
 	_, err := GetTypeInfo(s)
 	assert.Error(t, fmt.Errorf(`unexpected tag value "bad-juju"`), err)
+}
+
+func TestReflectSimpleTypes(t *testing.T) {
+	var i int
+	var s string
+	var mymap map[string]string
+
+	{
+		info, err := GetTypeInfo(i)
+		assert.NotEqual(t, info, Info{})
+		assert.Nil(t, err)
+	}
+	{
+		info, err := GetTypeInfo(s)
+		assert.NotEqual(t, info, Info{})
+		assert.Nil(t, err)
+	}
+	{
+		info, err := GetTypeInfo(mymap)
+		assert.Equal(t, info, Info{})
+		assert.Equal(t, err, fmt.Errorf("Can't reflect map type"))
+	}
 }

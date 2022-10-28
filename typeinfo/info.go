@@ -27,64 +27,43 @@ type Info struct {
 	// TagsToFields  maps "db" tags to struct fields.
 	// Sqlair does not care about fields without a "db" tag.
 	TagsToFields map[string]Field
+
 	// FieldsToTags maps field names to tags
 	FieldsToTags map[string]string
 }
 
-// Kind returns the Info's reflect.Kind.
-func (i Info) Kind() reflect.Kind {
-	return i.value.Kind()
-}
-
-// Name returns the name of the Info's type.
-func (i Info) Name() string {
-	return i.value.Type().Name()
-}
-
-// GetType returns the reflect.Type of the value embedded in the data Info
-// strcuture.
-// This method is not used anywhere. Remove it.
-func (i Info) GetType() reflect.Type {
-	return i.value.Type()
-}
-
-// GetFieldValue returns the real, concrete value for the fieldName passed as
+// GetValue returns the real, concrete value for the fieldName passed as
 // parameter if found and true indicating it was found.  If not found, returns
 // an empty interface and false.
-//TODO: change GetFieldValue to GetValue and instead of tagName get the full
-//name from the io part. Check if it has as point and then detect if it is a
-//struct or a map. This would allow us to support normal variables too.
-func GetFieldValue(info Info, tagName string) (any, error) {
+func GetValue(info Info, name string) (any, error) {
 	v := info.value
-	if info.Kind() == reflect.Map && info.Name() == "M" {
+	if v.Kind() == reflect.Map && v.Type().Name() == "M" {
 		m := v.Interface().(M)
-		k, found := m[tagName]
+		k, found := m[name]
 		if !found {
-			return nil, fmt.Errorf("field '%s' not found", tagName)
+			return nil, fmt.Errorf("field '%s' not found", name)
 		}
 		return k, nil
 	}
-	f, found := info.TagsToFields[tagName]
+	f, found := info.TagsToFields[name]
 	if !found {
-		return nil, fmt.Errorf("field '%s' not found", tagName)
+		return nil, fmt.Errorf("field '%s' not found", name)
 	}
 	return reflect.Indirect(v).Field(f.Index).Interface(), nil
 }
 
-// SetFieldValue sets the field corresponding to the tagName passed as
+// SetValue sets the field corresponding to the tagName passed as
 // paremeter, to the value "value" passed as parameter. Returns true if the
 // value was set, false otherwise.
-// TODO: same as before, just SetValue and change tagName to suuport "normal"
-// variables.
-func SetFieldValue(obj any, tagName string, value any) error {
+func SetValue(obj any, name string, value any) error {
 	m := reflect.Indirect(reflect.ValueOf(obj))
 	// For sqlair.M type
 	if m.Kind() == reflect.Map && m.Type().Name() == "M" {
-		vfound := m.MapIndex(reflect.ValueOf(tagName))
+		vfound := m.MapIndex(reflect.ValueOf(name))
 		if !vfound.IsValid() {
-			return fmt.Errorf("'%s' key not found in map", tagName)
+			return fmt.Errorf("'%s' key not found in map", name)
 		}
-		mapKey := reflect.ValueOf(tagName)
+		mapKey := reflect.ValueOf(name)
 		mapValue := reflect.ValueOf(value)
 		m.SetMapIndex(mapKey, mapValue)
 		return nil
@@ -93,9 +72,9 @@ func SetFieldValue(obj any, tagName string, value any) error {
 	// For struct type
 	i, _ := GetTypeInfo(obj)
 	if i.value.Kind() == reflect.Struct {
-		field, found := i.TagsToFields[tagName]
+		field, found := i.TagsToFields[name]
 		if !found {
-			return fmt.Errorf("field '%s' not found", tagName)
+			return fmt.Errorf("field '%s' not found", name)
 		}
 
 		if field.Type != reflect.TypeOf(value) {
@@ -106,7 +85,7 @@ func SetFieldValue(obj any, tagName string, value any) error {
 		s := reflect.ValueOf(obj).Elem()
 
 		if !s.Field(field.Index).CanSet() {
-			return fmt.Errorf("%s (%s) is not settable", field.Name, tagName)
+			return fmt.Errorf("%s (%s) is not settable", field.Name, name)
 		}
 
 		s.Field(field.Index).Set(reflect.ValueOf(value))

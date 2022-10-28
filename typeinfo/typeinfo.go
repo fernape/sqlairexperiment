@@ -34,7 +34,8 @@ func GetTypeInfo(value any) (Info, error) {
 	}
 
 	// Do not cache for "M" types
-	if !(ri.Name() == "M" && ri.Kind() == reflect.Map) {
+	v = ri.value
+	if !(v.Type().Name() == "M" && v.Kind() == reflect.Map) {
 		cmutex.Lock()
 		//cache[v.Type()] = ri
 		cmutex.Unlock()
@@ -48,12 +49,14 @@ func generate(value reflect.Value) (Info, error) {
 	// Dereference the pointer if it is one.
 	value = reflect.Indirect(value)
 
-	// If this is a not a struct or a "M", we can not provide
-	// any further reflection information.
-	// TODO: Check and return error if this is not a struct, or a map of
-	// type sqlair.M or a normal variable.
+	// Reflection information is generated for structs, typeinfo.M
+	// and plain types only.
 	if value.Kind() != reflect.Struct {
-		if value.Kind() != reflect.Map && reflect.TypeOf(value).Name() != "M" {
+		if value.Kind() == reflect.Map {
+			if value.Type().Name() != "M" {
+				return Info{}, fmt.Errorf("Can't reflect map type")
+			}
+		} else {
 			return Info{value: value}, nil
 		}
 	}
