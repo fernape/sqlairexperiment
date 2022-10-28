@@ -45,11 +45,15 @@ func GetValue(info Info, name string) (any, error) {
 		}
 		return k, nil
 	}
-	f, found := info.TagsToFields[name]
-	if !found {
-		return nil, fmt.Errorf("field '%s' not found", name)
+	if v.Kind() == reflect.Struct {
+		f, found := info.TagsToFields[name]
+		if !found {
+			return nil, fmt.Errorf("field '%s' not found", name)
+		}
+		return reflect.Indirect(v).Field(f.Index).Interface(), nil
 	}
-	return reflect.Indirect(v).Field(f.Index).Interface(), nil
+
+	return v.Interface(), nil
 }
 
 // SetValue sets the field corresponding to the tagName passed as
