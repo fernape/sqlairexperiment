@@ -35,7 +35,14 @@ type Info struct {
 // GetValue returns the real, concrete value for the fieldName passed as
 // parameter if found and true indicating it was found.  If not found, returns
 // an empty interface and false.
-func GetValue(info Info, name string) (any, error) {
+func GetValue(info Info, arg ...string) (any, error) {
+	if len(arg) > 1 {
+		return nil, fmt.Errorf("Too many arguments")
+	}
+	var name string
+	if len(arg) == 1 {
+		name = arg[0]
+	}
 	v := info.value
 	if v.Kind() == reflect.Map && v.Type().Name() == "M" {
 		m := v.Interface().(M)

@@ -196,7 +196,7 @@ func TestGetSetSimpleTypes(t *testing.T) {
 		i = 99
 		info, err := GetTypeInfo(i)
 		assert.Nil(t, err)
-		vi, err2 := GetValue(info, "")
+		vi, err2 := GetValue(info)
 		assert.Nil(t, err2)
 		assert.Equal(t, i, vi)
 	}
@@ -204,7 +204,7 @@ func TestGetSetSimpleTypes(t *testing.T) {
 		s = "foo"
 		info, err := GetTypeInfo(s)
 		assert.Nil(t, err)
-		vs, _ := GetValue(info, "")
+		vs, _ := GetValue(info)
 		assert.Nil(t, err)
 		assert.Equal(t, s, vs)
 	}
