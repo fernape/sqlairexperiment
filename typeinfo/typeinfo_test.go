@@ -214,7 +214,7 @@ func TestGetSetSimpleTypes(t *testing.T) {
 		vs, err = GetValue(info)
 		assert.Nil(t, err)
 		assert.Equal(t, s, vs)
-		err = SetValue(&s, "", "bar")
+		err = SetValue(&s, "bar")
 		assert.Nil(t, err)
 		assert.Equal(t, "bar", s)
 	}

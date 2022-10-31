@@ -32,7 +32,7 @@ type Info struct {
 	FieldsToTags map[string]string
 }
 
-// GetValue returns the real, concrete value for the fieldName passed as
+// GetValue returns the real, concrete value for the field name passed as
 // parameter if found and true indicating it was found.  If not found, returns
 // an empty interface and false.
 func GetValue(info Info, arg ...string) (any, error) {
@@ -63,20 +63,33 @@ func GetValue(info Info, arg ...string) (any, error) {
 	return v.Interface(), nil
 }
 
-// SetValue sets the field corresponding to the tagName passed as
+// SetValue sets the field corresponding to the tag name passed as
 // paremeter, to the value "value" passed as parameter. Returns true if the
 // value was set, false otherwise.
-func SetValue(obj any, name string, value any) error {
+func SetValue(obj any, args ...any) error {
+	nargs := len(args)
+	if nargs > 2 {
+		return fmt.Errorf("Too many arguments")
+	}
+	var name string
+	var value any
+	if nargs <= 2 {
+		value = args[0]
+	}
+	if nargs == 2 {
+		name = args[0].(string)
+		value = args[1]
+	}
 	m := reflect.Indirect(reflect.ValueOf(obj))
 	// For sqlair.M type
 	if m.Kind() == reflect.Map && m.Type().Name() == "M" {
-		vfound := m.MapIndex(reflect.ValueOf(name))
+		kv := reflect.ValueOf(name)
+		vfound := m.MapIndex(kv)
 		if !vfound.IsValid() {
 			return fmt.Errorf("'%s' key not found in map", name)
 		}
-		mapKey := reflect.ValueOf(name)
 		mapValue := reflect.ValueOf(value)
-		m.SetMapIndex(mapKey, mapValue)
+		m.SetMapIndex(kv, mapValue)
 		return nil
 	}
 
@@ -89,7 +102,6 @@ func SetValue(obj any, name string, value any) error {
 		}
 
 		if field.Type != reflect.TypeOf(value) {
-			//fmt.Printf("Types: %v\n%v", field.Type, reflect.TypeOf(value))
 			return fmt.Errorf("type missmatch")
 		}
 
