@@ -35,7 +35,7 @@ type Info struct {
 // GetValue returns the real, concrete value for the field name passed as
 // parameter if found and true indicating it was found.  If not found, returns
 // an empty interface and false.
-func GetValue(info Info, arg ...string) (any, error) {
+func GetValue(obj any, arg ...string) (any, error) {
 	if len(arg) > 1 {
 		return nil, fmt.Errorf("Too many arguments")
 	}
@@ -43,9 +43,13 @@ func GetValue(info Info, arg ...string) (any, error) {
 	if len(arg) == 1 {
 		name = arg[0]
 	}
+	info, err := GetTypeInfo(obj)
+	if err != nil {
+		return nil, err
+	}
 	v := info.value
 	if v.Kind() == reflect.Map && v.Type().Name() == "M" {
-		m := v.Interface().(M)
+		m := obj.(M)
 		k, found := m[name]
 		if !found {
 			return nil, fmt.Errorf("field '%s' not found", name)
@@ -57,10 +61,11 @@ func GetValue(info Info, arg ...string) (any, error) {
 		if !found {
 			return nil, fmt.Errorf("field '%s' not found", name)
 		}
-		return reflect.Indirect(v).Field(f.Index).Interface(), nil
+		s := reflect.ValueOf(obj)
+		return reflect.Indirect(s).Field(f.Index).Interface(), nil
 	}
 
-	return v.Interface(), nil
+	return obj, nil
 }
 
 // SetValue sets the field corresponding to the tag name passed as
@@ -94,9 +99,9 @@ func SetValue(obj any, args ...any) error {
 	}
 
 	// For struct type
-	i, _ := GetTypeInfo(obj)
-	if i.value.Kind() == reflect.Struct {
-		field, found := i.TagsToFields[name]
+	info, _ := GetTypeInfo(obj)
+	if info.value.Kind() == reflect.Struct {
+		field, found := info.TagsToFields[name]
 		if !found {
 			return fmt.Errorf("field '%s' not found", name)
 		}

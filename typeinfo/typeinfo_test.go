@@ -77,15 +77,15 @@ func TestGetSetStruct(t *testing.T) {
 		NotInDB: "bar",
 	}
 
-	info, err := GetTypeInfo(s)
+	_, err := GetTypeInfo(s)
 	assert.Nil(t, err)
 	{
-		v, err := GetValue(info, "id")
+		v, err := GetValue(s, "id")
 		assert.Equal(t, nil, err)
 		assert.Equal(t, (int64)(99), v)
 	}
 	{
-		v, err := GetValue(info, "nope")
+		v, err := GetValue(s, "nope")
 		assert.Equal(t, fmt.Errorf("field 'nope' not found"), err)
 		assert.Equal(t, nil, v)
 	}
@@ -93,8 +93,8 @@ func TestGetSetStruct(t *testing.T) {
 		err := SetValue(&s, "id", (int64)(33))
 		assert.Nil(t, err)
 		var v any
-		i, _ := GetTypeInfo(s)
-		v, err = GetValue(i, "id")
+		//i, _ := GetTypeInfo(s)
+		v, err = GetValue(s, "id")
 		assert.Nil(t, err)
 		assert.Equal(t, (int64)(33), v)
 	}
@@ -102,8 +102,8 @@ func TestGetSetStruct(t *testing.T) {
 		err := SetValue(&s, "id", "this is a string")
 		assert.Equal(t, fmt.Errorf("type missmatch"), err)
 		var v any
-		i, _ := GetTypeInfo(s)
-		v, err = GetValue(i, "id")
+		//i, _ := GetTypeInfo(s)
+		v, err = GetValue(s, "id")
 		assert.Nil(t, err)
 		assert.Equal(t, (int64)(33), v)
 	}
@@ -117,7 +117,7 @@ func TestGetSetMap(t *testing.T) {
 	info, err := GetTypeInfo(m)
 	assert.Nil(t, err)
 	{
-		v, err := GetValue(info, "id")
+		v, err := GetValue(m, "id")
 		assert.Equal(t, nil, err)
 		assert.Equal(t, 99, v)
 	}
@@ -126,18 +126,18 @@ func TestGetSetMap(t *testing.T) {
 		assert.Equal(t, fmt.Errorf("field 'nope' not found"), err)
 		assert.Equal(t, nil, v)
 	}
-	//{
-	//	err := SetValue(&m, "id", 33)
-	//	assert.Nil(t, err)
-	//	var v any
-	//	v, err = GetValue(m, "id")
-	//	assert.Nil(t, err)
-	//	assert.Equal(t, 33, v)
-	//}
-	//{
-	//	err := SetValue(&m, "nope", 33)
-	//	assert.Equal(t, fmt.Errorf("'nope' key not found in map"), err)
-	//}
+	{
+		err := SetValue(&m, "id", 33)
+		assert.Nil(t, err)
+		var v any
+		v, err = GetValue(m, "id")
+		assert.Nil(t, err)
+		assert.Equal(t, 33, v)
+	}
+	{
+		err := SetValue(&m, "nope", 33)
+		assert.Equal(t, fmt.Errorf("'nope' key not found in map"), err)
+	}
 }
 
 func TestReflectM(t *testing.T) {
@@ -190,14 +190,13 @@ func TestReflectSimpleTypes(t *testing.T) {
 
 func TestGetSetSimpleTypes(t *testing.T) {
 	var err error
-	var info Info
 	{
 		var vi any
 
 		i := 99
-		info, err = GetTypeInfo(i)
+		_, err = GetTypeInfo(i)
 		assert.Nil(t, err)
-		vi, err = GetValue(info)
+		vi, err = GetValue(i)
 		assert.Nil(t, err)
 		assert.Equal(t, i, vi)
 		err = SetValue(&i, "", 100)
@@ -209,9 +208,9 @@ func TestGetSetSimpleTypes(t *testing.T) {
 		var vs any
 
 		s := "foo"
-		info, err = GetTypeInfo(s)
+		_, err = GetTypeInfo(s)
 		assert.Nil(t, err)
-		vs, err = GetValue(info)
+		vs, err = GetValue(s)
 		assert.Nil(t, err)
 		assert.Equal(t, s, vs)
 		err = SetValue(&s, "bar")

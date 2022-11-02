@@ -37,7 +37,7 @@ func GetTypeInfo(value any) (Info, error) {
 	v = ri.value
 	if !(v.Type().Name() == "M" && v.Kind() == reflect.Map) {
 		cmutex.Lock()
-		//cache[v.Type()] = ri
+		cache[v.Type()] = ri
 		cmutex.Unlock()
 	}
 	return ri, nil
