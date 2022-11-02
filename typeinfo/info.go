@@ -72,19 +72,16 @@ func GetValue(obj any, arg ...string) (any, error) {
 // SetValue sets the field corresponding to the tag name passed as
 // paremeter, to the value "value" passed as parameter. Returns true if the
 // value was set, false otherwise.
-func SetValue(obj any, args ...any) error {
+func SetValue(value any, obj any, args ...string) error {
 	nargs := len(args)
-	if nargs > 2 {
+	if nargs > 1 {
 		return fmt.Errorf("Too many arguments")
 	}
 	var name string
-	var value any
-	if nargs <= 2 {
-		value = args[0]
-	}
-	if nargs == 2 {
-		name = args[0].(string)
-		value = args[1]
+	if nargs == 1 {
+		name = args[0]
+	} else {
+
 	}
 	m := reflect.Indirect(reflect.ValueOf(obj))
 	// For sqlair.M type

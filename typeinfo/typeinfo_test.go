@@ -90,7 +90,7 @@ func TestGetSetStruct(t *testing.T) {
 		assert.Equal(t, nil, v)
 	}
 	{
-		err := SetValue(&s, "id", (int64)(33))
+		err := SetValue((int64)(33), &s, "id")
 		assert.Nil(t, err)
 		var v any
 		//i, _ := GetTypeInfo(s)
@@ -99,7 +99,7 @@ func TestGetSetStruct(t *testing.T) {
 		assert.Equal(t, (int64)(33), v)
 	}
 	{
-		err := SetValue(&s, "id", "this is a string")
+		err := SetValue("this is a string", &s, "id")
 		assert.Equal(t, fmt.Errorf("type missmatch"), err)
 		var v any
 		//i, _ := GetTypeInfo(s)
@@ -127,7 +127,7 @@ func TestGetSetMap(t *testing.T) {
 		assert.Equal(t, nil, v)
 	}
 	{
-		err := SetValue(&m, "id", 33)
+		err := SetValue(33, &m, "id")
 		assert.Nil(t, err)
 		var v any
 		v, err = GetValue(m, "id")
@@ -135,7 +135,7 @@ func TestGetSetMap(t *testing.T) {
 		assert.Equal(t, 33, v)
 	}
 	{
-		err := SetValue(&m, "nope", 33)
+		err := SetValue(33, &m, "nope")
 		assert.Equal(t, fmt.Errorf("'nope' key not found in map"), err)
 	}
 }
@@ -199,7 +199,7 @@ func TestGetSetSimpleTypes(t *testing.T) {
 		vi, err = GetValue(i)
 		assert.Nil(t, err)
 		assert.Equal(t, i, vi)
-		err = SetValue(&i, "", 100)
+		err = SetValue(100, &i, "")
 		assert.Nil(t, err)
 		assert.Equal(t, 100, i)
 	}
@@ -213,7 +213,7 @@ func TestGetSetSimpleTypes(t *testing.T) {
 		vs, err = GetValue(s)
 		assert.Nil(t, err)
 		assert.Equal(t, s, vs)
-		err = SetValue(&s, "bar")
+		err = SetValue("bar", &s)
 		assert.Nil(t, err)
 		assert.Equal(t, "bar", s)
 	}
