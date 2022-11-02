@@ -18,7 +18,6 @@ func GetTypeInfo(value any) (Info, error) {
 	}
 
 	v := reflect.ValueOf(value)
-
 	v = reflect.Indirect(v)
 
 	cmutex.RLock()
@@ -28,18 +27,18 @@ func GetTypeInfo(value any) (Info, error) {
 		return info, nil
 	}
 
-	ri, err := generate(v)
+	info, err := generate(v)
 	if err != nil {
 		return Info{}, err
 	}
 
 	// Do not cache for "M" types
-	if !(ri.Type.Name() == "M" && ri.Kind == reflect.Map) {
+	if !(info.Kind == reflect.Map && info.Type.Name() == "M") {
 		cmutex.Lock()
-		cache[v.Type()] = ri
+		cache[v.Type()] = info
 		cmutex.Unlock()
 	}
-	return ri, nil
+	return info, nil
 }
 
 // generate produces and returns reflection information for the input
