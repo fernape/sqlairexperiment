@@ -34,8 +34,7 @@ func GetTypeInfo(value any) (Info, error) {
 	}
 
 	// Do not cache for "M" types
-	v = ri.value
-	if !(v.Type().Name() == "M" && v.Kind() == reflect.Map) {
+	if !(ri.Type.Name() == "M" && ri.Kind == reflect.Map) {
 		cmutex.Lock()
 		cache[v.Type()] = ri
 		cmutex.Unlock()
@@ -57,14 +56,16 @@ func generate(value reflect.Value) (Info, error) {
 				return Info{}, fmt.Errorf("Can't reflect map type")
 			}
 		} else {
-			return Info{value: value}, nil
+			return Info{Kind: value.Kind(),
+				Type: value.Type()}, nil
 		}
 	}
 
 	info := Info{
 		TagsToFields: make(map[string]Field),
 		FieldsToTags: make(map[string]string),
-		value:        value,
+		Kind:         value.Kind(),
+		Type:         value.Type(),
 	}
 
 	switch value.Kind() {

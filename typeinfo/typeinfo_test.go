@@ -26,8 +26,8 @@ func TestReflectSimpleConcurrent(t *testing.T) {
 	info, err := GetTypeInfo(num)
 	assert.Nil(t, err)
 
-	assert.Equal(t, reflect.Int64, info.value.Kind())
-	assert.Equal(t, "int64", info.value.Type().Name())
+	assert.Equal(t, reflect.Int64, info.Kind)
+	assert.Equal(t, "int64", info.Type.Name())
 
 	wg.Wait()
 }
@@ -48,8 +48,8 @@ func TestReflectStruct(t *testing.T) {
 	info, err := GetTypeInfo(s)
 	assert.Nil(t, err)
 
-	assert.Equal(t, reflect.Struct, info.value.Kind())
-	assert.Equal(t, "something", info.value.Type().Name())
+	assert.Equal(t, reflect.Struct, info.Kind)
+	assert.Equal(t, "something", info.Type.Name())
 
 	assert.Len(t, info.TagsToFields, 2)
 

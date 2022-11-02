@@ -22,7 +22,9 @@ type Field struct {
 
 // Struct represents reflected information about a struct type.
 type Info struct {
-	value reflect.Value
+	Kind reflect.Kind
+
+	Type reflect.Type
 
 	// TagsToFields  maps "db" tags to struct fields.
 	// Sqlair does not care about fields without a "db" tag.
@@ -47,8 +49,7 @@ func GetValue(obj any, arg ...string) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	v := info.value
-	if v.Kind() == reflect.Map && v.Type().Name() == "M" {
+	if info.Kind == reflect.Map && info.Type.Name() == "M" {
 		m := obj.(M)
 		k, found := m[name]
 		if !found {
@@ -56,7 +57,7 @@ func GetValue(obj any, arg ...string) (any, error) {
 		}
 		return k, nil
 	}
-	if v.Kind() == reflect.Struct {
+	if info.Kind == reflect.Struct {
 		f, found := info.TagsToFields[name]
 		if !found {
 			return nil, fmt.Errorf("field '%s' not found", name)
@@ -100,7 +101,7 @@ func SetValue(obj any, args ...any) error {
 
 	// For struct type
 	info, _ := GetTypeInfo(obj)
-	if info.value.Kind() == reflect.Struct {
+	if info.Kind == reflect.Struct {
 		field, found := info.TagsToFields[name]
 		if !found {
 			return fmt.Errorf("field '%s' not found", name)
@@ -122,8 +123,8 @@ func SetValue(obj any, args ...any) error {
 
 	// For simple types
 	p := reflect.ValueOf(obj)
-	v := p.Elem()
-	v.Set(reflect.ValueOf(value))
+	e := p.Elem()
+	e.Set(reflect.ValueOf(value))
 	return nil
 }
 
