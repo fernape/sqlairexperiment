@@ -199,7 +199,7 @@ func TestGetSetSimpleTypes(t *testing.T) {
 		vi, err = GetValue(i)
 		assert.Nil(t, err)
 		assert.Equal(t, i, vi)
-		err = SetValue(100, &i, "")
+		err = SetValue(100, &i)
 		assert.Nil(t, err)
 		assert.Equal(t, 100, i)
 	}
